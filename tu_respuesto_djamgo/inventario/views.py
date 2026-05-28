@@ -3,16 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Repuesto, Proveedor
-from .serializers import RepuestoSerializer, ProveedorSerializer
+from .serializers import  RepuestoSerializer, ProveedorSerializer, ProveedorUpdateSerializer, RepuestoCreateSerializer , RespuestosUpdateSerializer, ProveedorDeleteSerializer, RepuestoDetailSerializer, ProveedorDetailSerializer, ProveedorCreateSerializer, ProveedorDeleteSerializer , RepuestoCreateSerializer, RepuestoDetailSerializer
 
 from django.db.models import Q
 
-
-# ==============================
-# REPUETO (INVENTARIO)
-# ==============================
-
-# LISTAR REPUESTOS (con filtro categoría y búsqueda por código)
 @api_view(['GET'])
 def listar_repuestos(request):
     repuestos = Repuesto.objects.all()
@@ -30,27 +24,58 @@ def listar_repuestos(request):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# CREAR REPUESTO
 @api_view(['POST'])
 def crear_repuesto(request):
-    serializer = RepuestoSerializer(data=request.data)
+    codigo_repuesto = request.data.get("codigo_repuesto")
+    nombre = request.data.get("nombre")
+    proveedor_id = request.data.get("proveedor_id")
+    descripcion = request.data.get("descripcion")
+    categoria = request.data.get("categoria")
+    marca = request.data.get("marca")
+    modelo_compatible = request.data.get("modelo_compatible")
+    unidad_medida = request.data.get("unidad_medida")
+    cantidad_stock = request.data.get("cantidad_stock")
+    stock_minimo = request.data.get("stock_minimo")
+    precio_compra = request.data.get("precio_compra")
+    precio_venta = request.data.get("precio_venta")
+    ubicacion = request.data.get("ubicacion")
+    estado = request.data.get("estado")
 
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    if Repuesto.objects.filter(codigo_repuesto=codigo_repuesto).exists():
+        return Response({"error": "El código de repuesto ya existe"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if not Proveedor.objects.filter(id=proveedor_id).exists():
+        return Response({"error": "Proveedor no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+    
+    repuesto = Repuesto.objects.create (
+        codigo_repuesto=codigo_repuesto,
+        nombre=nombre,
+        proveedor_id=proveedor_id,
+        descripcion=descripcion,
+        categoria=categoria,
+        marca=marca,
+        modelo_compatible=modelo_compatible,
+        unidad_medida=unidad_medida,
+        cantidad_stock=cantidad_stock,
+        stock_minimo=stock_minimo,
+        precio_compra=precio_compra,
+        precio_venta=precio_venta,
+        ubicacion=ubicacion,
+        estado=estado
+    )
+    serializer = RepuestoCreateSerializer(repuesto)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ACTUALIZAR REPUESTO
 @api_view(['PUT'])
 def actualizar_repuesto(request, id):
+
     try:
         repuesto = Repuesto.objects.get(id_repuesto=id)
     except Repuesto.DoesNotExist:
         return Response({"error": "Repuesto no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = RepuestoSerializer(repuesto, data=request.data)
+    serializer = RespuestosUpdateSerializer(repuesto, data=request.data)
 
     if serializer.is_valid():
         serializer.save()
@@ -58,10 +83,8 @@ def actualizar_repuesto(request, id):
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ELIMINAR REPUESTO
 @api_view(['DELETE'])
-def eliminar_repuesto(request, id):
+def eliminar_repuesto(id):
     try:
         repuesto = Repuesto.objects.get(id_repuesto=id)
     except Repuesto.DoesNotExist:
@@ -71,11 +94,6 @@ def eliminar_repuesto(request, id):
     return Response({"mensaje": "Repuesto eliminado correctamente"}, status=status.HTTP_204_NO_CONTENT)
 
 
-# ==============================
-# PROVEEDOR
-# ==============================
-
-# LISTAR PROVEEDORES (con búsqueda)
 @api_view(['GET'])
 def listar_proveedores(request):
     proveedores = Proveedor.objects.all()
@@ -89,14 +107,13 @@ def listar_proveedores(request):
             Q(telefono__icontains=buscar)
         )
 
-    serializer = ProveedorSerializer(proveedores, many=True)
+    serializer = ProveedorDetailSerializer(proveedores, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-# CREAR PROVEEDOR
 @api_view(['POST'])
 def crear_proveedor(request):
-    serializer = ProveedorSerializer(data=request.data)
+    serializer = ProveedorCreateSerializer(data=request.data)
 
     if serializer.is_valid():
         serializer.save()
@@ -104,8 +121,6 @@ def crear_proveedor(request):
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ACTUALIZAR PROVEEDOR
 @api_view(['PUT'])
 def actualizar_proveedor(request, id):
     try:
@@ -113,7 +128,7 @@ def actualizar_proveedor(request, id):
     except Proveedor.DoesNotExist:
         return Response({"error": "Proveedor no encontrado"}, status=status.HTTP_404_NOT_FOUND)
 
-    serializer = ProveedorSerializer(proveedor, data=request.data)
+    serializer = ProveedorUpdateSerializer(proveedor, data=request.data)
 
     if serializer.is_valid():
         serializer.save()
@@ -121,10 +136,8 @@ def actualizar_proveedor(request, id):
 
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ELIMINAR PROVEEDOR
 @api_view(['DELETE'])
-def eliminar_proveedor(request, id):
+def eliminar_proveedor(id):
     try:
         proveedor = Proveedor.objects.get(id=id)
     except Proveedor.DoesNotExist:
